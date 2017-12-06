@@ -104,37 +104,31 @@ float front_IR()
 
 void autonomous_mode()
 {
-//pc.printf("%f cm\n",front_IR());
-    if (front_IR()<= limit)
+    //pc.printf("%f cm\n",front_IR());
+    while (1)
     {
-        while(front_IR()<=limit)
+        if (blue.getc()=='!')
         {
-            RSSendCommand(backwardstep);
-            wait(2);
+            if (blue.getc()=='B')
+            {
+                if (blue.getc() == '2')
+                {
+                    if (blue.getc() == '0')
+                    {
+                        pc.printf("autonomous_mode terminated \r\n");
+                        return;
+                    }
+                }
+            }
         }
-        if (right_IR()>=limit)
+        if (front_IR()<= limit)
         {
-            RSSendCommand(rightturnstep);
-            RSSendCommand(rightturnstep);
-            RSSendCommand(rightturnstep);
-            wait(3.5);
-            RSSendCommand(stop);
-        }
-        else if (left_IR()>=limit)
-        {
-            RSSendCommand(leftturnstep);
-            RSSendCommand(leftturnstep);
-            RSSendCommand(leftturnstep);
-            wait(3.5);
-            RSSendCommand(stop);
-        }
-        else
-        {
-            while( left_IR()>=limit || right_IR()>=limit)
+            while(front_IR()<=limit)
             {
                 RSSendCommand(backwardstep);
+                wait(2);
             }
-            if(right_IR()>=limit)
+            if (right_IR()>=limit)
             {
                 RSSendCommand(rightturnstep);
                 RSSendCommand(rightturnstep);
@@ -142,71 +136,99 @@ void autonomous_mode()
                 wait(3.5);
                 RSSendCommand(stop);
             }
-            else if(left_IR()>=limit)
+            else if (left_IR()>=limit)
             {
                 RSSendCommand(leftturnstep);
                 RSSendCommand(leftturnstep);
                 RSSendCommand(leftturnstep);
                 wait(3.5);
                 RSSendCommand(stop);
+            }
+            else
+            {
+                while( left_IR()>=limit || right_IR()>=limit)
+                {
+                    RSSendCommand(backwardstep);
+                }
+                if(right_IR()>=limit)
+                {
+                    RSSendCommand(rightturnstep);
+                    RSSendCommand(rightturnstep);
+                    RSSendCommand(rightturnstep);
+                    wait(3.5);
+                    RSSendCommand(stop);
+                }
+                else if(left_IR()>=limit)
+                {
+                    RSSendCommand(leftturnstep);
+                    RSSendCommand(leftturnstep);
+                    RSSendCommand(leftturnstep);
+                    wait(3.5);
+                    RSSendCommand(stop);
+                }
             }
         }
-    }
-    else {
-        RSSendCommand(forwardstep);
+        else {
+            RSSendCommand(forwardstep);
+        }
     }
 }
 
 int main()
 {
     RSSendCommand(burp);
-    wait(2);
-    RSSendCommand(high5);
-    wait(5);
+    // wait(2);
+    // RSSendCommand(high5);
+    // wait(5);
     char bnum=0;
     char bact=0;
     while(1)
     {
-        autonomous_mode();
-        // if (blue.getc()=='!')
-        // {
-        //     if (blue.getc()=='B')
-        //     {
-        //         bnum = blue.getc();
-        //         if (bnum == '5')
-        //         {
-        //             bact = blue.getc();
-        //             if (bact == '1')
-        //             {
-        //                 RSSendCommand(forwardstep);
-        //             }
-        //         }
-        //         else if (bnum == '6')
-        //         {
-        //             bact = blue.getc();
-        //             if (bact == '1')
-        //             {
-        //                 RSSendCommand(backwardstep);
-        //             }
-        //         }
-        //         else if (bnum == '7')
-        //         {
-        //             bact = blue.getc();
-        //             if (bact == '1')
-        //             {
-        //                 RSSendCommand(leftturnstep);
-        //             }
-        //         }
-        //         else if (bnum == '8')
-        //         {
-        //             bact = blue.getc();
-        //             if (bact == '1')
-        //             {
-        //                 RSSendCommand(rightturnstep);
-        //             }
-        //         }
-        //
-        //     }
-        // }
+        if (blue.getc()=='!')
+        {
+            if (blue.getc()=='B')
+            {
+                bnum = blue.getc();
+                if (bnum == '1')
+                {
+                    pc.printf("autonomous_mode\r\n");
+                    autonomous_mode();
+                    pc.printf("autonomous_mode gone\r\n");
+                }
+                else if (bnum == '5')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(forwardstep);
+                    }
+                }
+                else if (bnum == '6')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(backwardstep);
+                    }
+                }
+                else if (bnum == '7')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(leftturnstep);
+                    }
+                }
+                else if (bnum == '8')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(rightturnstep);
+                    }
+                }
+            }
+        }
+        pc.printf("xx\r\n");
     }
 }
