@@ -55,7 +55,7 @@
 #define  Demo1                  0xD2
 #define  Demo2                  0xD3
 #define  Dance                  0xD4
-#define RSNoOp                  0xEF
+#define  RSNoOp                 0xEF
 
 DigitalOut IROut(p20, 1);
 AnalogIn IRSensor_left(p17);
@@ -67,47 +67,6 @@ Serial pc(USBTX, USBRX);
 
 float limit = 60;
 int bitTime=516;       // Bit time (Theoretically 833 but as low as 516 may work)
-
-//global variables for main and interrupt routine
-volatile bool global_button_ready = 0;
-volatile int  global_bnum = 0;
-volatile int  global_bhit;
-//state used to remember previous characters read in a button message
-enum statetype {start = 0, got_exclm, got_B, got_num, got_hit};
-statetype state = start;
-
-//Interrupt routine to parse message with one new character per serial RX interrupt
-void parse_message()
-{
-    switch (state) {
-        case start:
-            if (blue.getc()=='!') state = got_exclm;
-            else state = start;
-            break;
-        case got_exclm:
-            if (blue.getc() == 'B') state = got_B;
-            else state = start;
-            break;
-        case got_B:
-            global_bnum = blue.getc();
-            state = got_num;
-            break;
-        case got_num:
-            global_bhit = blue.getc();
-            state = got_hit;
-            break;
-        case got_hit:
-            if (blue.getc() == char(~('!' + ' B' + global_bnum + global_bhit)))
-            {
-                global_button_ready = 1;
-            }
-            state = start;
-            break;
-        default:
-            blue.getc();
-            state = start;
-    }
-}
 
 void RSSendCommand(int command)
 {
@@ -145,64 +104,68 @@ float front_IR()
 
 void autonomous_mode()
 {
-    if (front_IR()<= limit)
+    while (1)
     {
-        while(front_IR()<=limit)
+        if (front_IR()<= limit)
         {
-            RSSendCommand(backwardstep);
-            wait(2);
-        }
-        if (right_IR()>=limit)
-        {
-            RSSendCommand(rightturnstep);
-            RSSendCommand(rightturnstep);
-            RSSendCommand(rightturnstep);
-            wait(3.5);
-            RSSendCommand(stop);
-        }
-        else if (left_IR()>=limit)
-        {
-            RSSendCommand(leftturnstep);
-            RSSendCommand(leftturnstep);
-            RSSendCommand(leftturnstep);
-            wait(3.5);
-            RSSendCommand(stop);
+            while(front_IR()<=limit)
+            {
+                RSSendCommand(backwardstep);
+                wait(2);
+            }
+            if (right_IR()>=limit)
+            {
+                RSSendCommand(rightturnstep);
+                RSSendCommand(rightturnstep);
+                RSSendCommand(rightturnstep);
+                wait(3.5);
+                RSSendCommand(stop);
+            }
+            else if (left_IR()>=limit)
+            {
+                RSSendCommand(leftturnstep);
+                RSSendCommand(leftturnstep);
+                RSSendCommand(leftturnstep);
+                wait(3.5);
+                RSSendCommand(stop);
+            }
+            else
+            {
+                while( left_IR()>=limit || right_IR()>=limit)
+                {
+                    RSSendCommand(backwardstep);
+                }
+                if(right_IR()>=limit)
+                {
+                    RSSendCommand(rightturnstep);
+                    RSSendCommand(rightturnstep);
+                    RSSendCommand(rightturnstep);
+                    wait(3.5);
+                    RSSendCommand(stop);
+                }
+                else if(left_IR()>=limit)
+                {
+                    RSSendCommand(leftturnstep);
+                    RSSendCommand(leftturnstep);
+                    RSSendCommand(leftturnstep);
+                    wait(3.5);
+                    RSSendCommand(stop);
+                }
+            }
         }
         else
         {
-            while( left_IR()>=limit || right_IR()>=limit)
-            {
-                RSSendCommand(backwardstep);
-            }
-            if(right_IR()>=limit)
-            {
-                RSSendCommand(rightturnstep);
-                RSSendCommand(rightturnstep);
-                RSSendCommand(rightturnstep);
-                wait(3.5);
-                RSSendCommand(stop);
-            }
-            else if(left_IR()>=limit)
-            {
-                RSSendCommand(leftturnstep);
-                RSSendCommand(leftturnstep);
-                RSSendCommand(leftturnstep);
-                wait(3.5);
-                RSSendCommand(stop);
-            }
+            RSSendCommand(forwardstep);
         }
-    }
-    else {
-        RSSendCommand(forwardstep);
     }
 }
 
 int main()
 {
-    //RSSendCommand(burp);
-    // wait(2);
-    // RSSendCommand(high5);
-    // wait(5);
+    RSSendCommand(burp);
+    wait(2);
+    RSSendCommand(high5);
+    wait(5);
     char bnum=0;
     char bact=0;
     while(1)
@@ -214,25 +177,15 @@ int main()
                 bnum = blue.getc();
                 if (bnum == '1')
                 {
-                    pc.printf("autonomous_mode\r\n");
-                    blue.attach(&parse_message,Serial::RxIrq);
-                    while (1)
-                    {
-                        //check for a new button message ready
-                        if(global_button_ready && (global_bnum=='2')) { // button 2 changed
-                            global_button_ready = 0; //reset flag after reading button message
-                            break;
-                        }
-                        autonomous_mode();
-                    }
-                    pc.printf("autonomous_mode gone\r\n");
+                    autonomous_mode();
                 }
                 else if (bnum == '5')
                 {
                     bact = blue.getc();
                     if (bact == '1')
                     {
-                        RSSendCommand(forwardstep);
+                        if (front_IR() >= limit)
+                            RSSendCommand(forwardstep);
                     }
                 }
                 else if (bnum == '6')
@@ -248,7 +201,10 @@ int main()
                     bact = blue.getc();
                     if (bact == '1')
                     {
-                        RSSendCommand(leftturnstep);
+                        if (left_IR() >= limit)
+                            RSSendCommand(leftturnstep);
+                        else
+                            RSSendCommand(roar);
                     }
                 }
                 else if (bnum == '8')
@@ -256,11 +212,44 @@ int main()
                     bact = blue.getc();
                     if (bact == '1')
                     {
-                        RSSendCommand(rightturnstep);
+                        if (right_IR() >= limit)
+                            RSSendCommand(rightturnstep);
+                        else
+                            RSSendCommand(roar);
+                    }
+                }
+                else if (bnum == '2')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        if ((left_IR() >= limit) &&
+                            (right_IR() >= limit) && (front_IR() >= limit))
+                        {
+                            RSSendCommand(AllDemo);
+                        } else
+                            RSSendCommand(roar);
+                    }
+                }
+                else if (bnum == '3')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(Dance);
+                    }
+                }
+                else if (bnum == '4')
+                {
+                    bact = blue.getc();
+                    if (bact == '1')
+                    {
+                        RSSendCommand(listen);
+                        wait(4);
+                        RSSendCommand(talkback);
                     }
                 }
             }
         }
-        pc.printf("xx\r\n");
     }
 }
